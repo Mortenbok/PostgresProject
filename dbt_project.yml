@@ -15,6 +15,25 @@ vars:
   # Order statuses that count towards revenue (is_revenue / lifetime_revenue_dkk).
   revenue_statuses: ["completed", "shipped"]
 
+  # Access groups for the marts (created by setup/04_security_roles.sql).
+  # Full access: all rows and columns. Restricted: rows limited by
+  # seeds/region_access.csv and no PII columns. See macros/secure_mart.sql.
+  full_access_roles: ["analyst_all"]
+  restricted_roles: ["sales_nordics", "sales_europe"]
+
+on-run-end:
+  - "{{ grant_marts_usage() }}"
+
+seeds:
+  postgres_project:
+    region_access:
+      +schema: security
+      # The row-level security policies read this table as the querying user,
+      # so every access group needs to be able to select from it.
+      +post-hook:
+        - "grant usage on schema {{ this.schema }} to {{ (var('full_access_roles') + var('restricted_roles')) | join(', ') }}"
+        - "grant select on {{ this }} to {{ (var('full_access_roles') + var('restricted_roles')) | join(', ') }}"
+
 models:
   postgres_project:
     # Write model and column descriptions to Postgres as COMMENT ON

@@ -1,0 +1,25 @@
+version: 2
+
+seeds:
+  - name: region_access
+    description: >
+      Which countries each access group may see in the marts. Read by the
+      row-level security policies that macros/secure_mart.sql puts on the
+      marts. country_code '*' means all countries. A country not listed here
+      is hidden from every group except '*'. Every group_role must exist in
+      Postgres (setup/04_security_roles.sql).
+    config:
+      column_types:
+        group_role: text
+        country_code: text
+    columns:
+      - name: group_role
+        description: Postgres group role. Members of it get the rows for country_code.
+        data_tests: [not_null]
+      - name: country_code
+        description: Upper-cased ISO country code the group may see, or '*' for all.
+        data_tests: [not_null]
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [group_role, country_code]

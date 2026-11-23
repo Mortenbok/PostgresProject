@@ -1,8 +1,10 @@
+-- depends_on: {{ ref('region_access') }}  (used by the secure_mart post-hook)
 select
     o.opportunity_id,
     o.lead_id,
     l.customer_id,
     l.lead_source,
+    l.country_code,
     o.opportunity_name,
     o.sales_owner,
     o.stage,

@@ -114,3 +114,56 @@ psql -d production -v env_user=production_user -v reader_password=$pw -f setup/0
 - Column change on an existing raw table: drop that foreign table in test/prod
   (and dependent views; `dbt build` recreates them) and re-run `02_link_raw.sql`.
 - test/prod builds need the development database to be up.
+
+## Access security on the marts
+
+Security sits on the marts, the layer people query. `raw`, `staging` and
+`intermediate` are not granted to any group, so the rules can't be bypassed
+by reading the layers below.
+
+| Group (NOLOGIN) | Rows                         | PII columns |
+|-----------------|------------------------------|-------------|
+| `analyst_all`   | all countries                | visible     |
+| `sales_nordics` | DK, NO, SE                   | hidden      |
+| `sales_europe`  | DE, NL, FR                   | hidden      |
+
+PII columns: `full_name` and `email` on `dim_customers` / `dim_leads`, and
+`opportunity_name` on `fct_opportunities` (it starts with the person's
+surname). `dim_products` is open to all groups.
+
+How it is built:
+
+- **Groups**: `setup/04_security_roles.sql` (superuser, once). Roles are
+  cluster-wide, so the same groups work in all three databases. It also creates
+  the demo logins `demo_analyst`, `demo_nordics`, `demo_europe`.
+- **Which group sees which country**: `seeds/region_access.csv` (`*` = all).
+  A country not listed is visible only to `*` groups.
+- **Rows**: Postgres row-level security. `macros/secure_mart.sql` runs as a
+  post-hook on each mart (configured in `models/marts/_marts.yml`) and
+  re-creates the grants and the `region_access` policy every build, because
+  dbt recreates the tables. Every mart has a `country_code` to filter on
+  (customer's country for orders, lead's country for leads/opportunities/funnel).
+- **Columns**: column grants. Restricted groups get `SELECT` on every column
+  except the PII ones, so `select *` or `select email` fails for them.
+- **Group lists**: vars `full_access_roles` / `restricted_roles` in
+  `dbt_project.yml`.
+
+The dbt user owns the tables and bypasses row-level security (downstream
+models need all rows), so never test the rules logged in as it.
+
+Add a group: add it to `04_security_roles.sql` and run it, add its countries
+to `region_access.csv`, add it to one of the role vars, then `dbt build`.
+
+### Test dashboards
+
+`dashboards/app.py` is a Streamlit app that logs in as a demo login you pick
+and shows sales, customers, pipeline and funnel dashboards plus an
+*Access check* tab comparing all three logins side by side.
+
+```powershell
+uv pip install --python .venv -r dashboards/requirements.txt
+.\.venv\Scripts\streamlit.exe run dashboards\app.py
+```
+
+The demo logins' passwords are in `pgpass.conf` (generated when the roles
+were set up); re-running `04_security_roles.sql` with new passwords resets them.

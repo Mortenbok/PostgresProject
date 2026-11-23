@@ -1,3 +1,4 @@
+-- depends_on: {{ ref('region_access') }}  (used by the secure_mart post-hook)
 with opps as (
     select
         lead_id,

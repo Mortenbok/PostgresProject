@@ -1,11 +1,15 @@
--- Lead -> opportunity -> customer -> revenue funnel, one row per lead source
--- and month of the person's first lead. Counts people (primary leads), not
--- raw lead records, so duplicate leads do not inflate the funnel.
+-- depends_on: {{ ref('region_access') }}  (used by the secure_mart post-hook)
+-- Lead -> opportunity -> customer -> revenue funnel, one row per lead source,
+-- lead country and month of the person's first lead. Country is in the grain
+-- so row-level security can filter the report by region. Counts people
+-- (primary leads), not raw lead records, so duplicate leads do not inflate
+-- the funnel.
 with people as (
     select
         lead_id,
         customer_id,
         lead_source,
+        country_code,
         date_trunc('month', created_on)::date  as lead_month,
         status in ('qualified', 'converted') or opportunity_count > 0  as is_qualified,
         opportunity_count > 0                  as has_opportunity
@@ -16,6 +20,7 @@ with people as (
 select
     p.lead_month,
     p.lead_source,
+    p.country_code,
     count(*)                                               as leads,
     count(*) filter (where p.is_qualified)                 as qualified_leads,
     count(*) filter (where p.has_opportunity)              as leads_with_opportunity,
@@ -27,4 +32,4 @@ select
 from people as p
 left join {{ ref('dim_customers') }} as c
     on c.customer_id = p.customer_id
-group by p.lead_month, p.lead_source
+group by p.lead_month, p.lead_source, p.country_code

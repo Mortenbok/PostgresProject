@@ -1,0 +1,8 @@
+group_role,country_code
+analyst_all,*
+sales_nordics,DK
+sales_nordics,NO
+sales_nordics,SE
+sales_europe,DE
+sales_europe,NL
+sales_europe,FR
