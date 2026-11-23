@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw tables loaded outside dbt. Physically in development.raw; in test and
+      production they are postgres_fdw foreign tables (see setup/).
+    schema: raw
+    tables:
+      - name: raw_customers
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: raw_orders
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: raw_order_items
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: raw_products
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: raw_leads
+        description: CRM leads. Not linked to customers by id, only by email.
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: raw_opportunities
+        description: CRM opportunities. Reference lead_id only.
+        columns:
+          - name: id
+            data_tests: [unique, not_null]

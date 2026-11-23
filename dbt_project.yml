@@ -1,0 +1,28 @@
+name: postgres_project
+version: "1.0.0"
+config-version: 2
+profile: postgres_project
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+analysis-paths: ["analyses"]
+snapshot-paths: ["snapshots"]
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Order statuses that count towards revenue (is_revenue / lifetime_revenue_dkk).
+  revenue_statuses: ["completed", "shipped"]
+
+models:
+  postgres_project:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table

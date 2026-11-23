@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_leads_matched
+    description: Leads with the customer they belong to (matched on email) and a primary-lead flag.
+    columns:
+      - name: lead_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Null when the lead never became a customer.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id

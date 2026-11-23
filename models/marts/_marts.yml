@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: fct_order_lines
+    description: One row per order item, enriched with order attributes.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: is_revenue
+        description: True when the order status is in var('revenue_statuses').
+  - name: fct_orders
+    description: One row per order. Amounts include all lines regardless of status.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+  - name: dim_customers
+    description: >
+      One row per customer with order history, lifetime revenue and CRM
+      attribution (primary lead, acquisition source, won opportunities).
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: acquisition_source
+        description: Lead source of the customer's first lead, or 'direct' if none.
+        data_tests: [not_null]
+      - name: lead_id
+        data_tests:
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_leads')
+                field: lead_id
+  - name: dim_products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: dim_leads
+    description: One row per lead, stitched to its customer (by email) and opportunities.
+    columns:
+      - name: lead_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+  - name: fct_opportunities
+    description: One row per opportunity, with the lead's source and the matched customer.
+    columns:
+      - name: opportunity_id
+        data_tests: [unique, not_null]
+      - name: lead_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_leads')
+                field: lead_id
+  - name: rpt_funnel_by_source
+    description: Lead-to-revenue funnel per lead source and lead month (people, not lead records).
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [lead_month, lead_source]

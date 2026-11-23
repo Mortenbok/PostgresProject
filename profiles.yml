@@ -1,0 +1,32 @@
+# No secrets in here: the password is left empty, so libpq falls back to
+# %APPDATA%\postgresql\pgpass.conf. Set DBT_PASSWORD to override (e.g. in CI).
+postgres_project:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: development_user
+      password: "{{ env_var('DBT_PASSWORD', '') }}"
+      dbname: development
+      schema: public
+      threads: 4
+    test:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: test_user
+      password: "{{ env_var('DBT_PASSWORD', '') }}"
+      dbname: test
+      schema: public
+      threads: 4
+    prod:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: production_user
+      password: "{{ env_var('DBT_PASSWORD', '') }}"
+      dbname: production
+      schema: public
+      threads: 4
