@@ -17,6 +17,11 @@ vars:
 
 models:
   postgres_project:
+    # Write model and column descriptions to Postgres as COMMENT ON
+    # TABLE/VIEW/COLUMN, so they show up in psql (\d+) and other SQL clients.
+    +persist_docs:
+      relation: true
+      columns: true
     staging:
       +schema: staging
       +materialized: view

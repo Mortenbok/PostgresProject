@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_opportunities
+    description: >
+      One row per CRM opportunity, from raw.raw_opportunities. Stage is
+      normalised to snake_case ('Closed Won', 'closed-won' -> 'closed_won') and
+      is_closed / is_won flags are derived from it. Opportunities reference a
+      lead only, never a customer directly.
+    columns:
+      - name: opportunity_id
+        description: "{{ doc('stg_opportunities__opportunity_id') }}"
+        data_tests: [unique, not_null]
+      - name: lead_id
+        description: "{{ doc('stg_opportunities__lead_id') }}"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_leads')
+                field: lead_id
+      - name: opportunity_name
+        description: "{{ doc('stg_opportunities__opportunity_name') }}"
+      - name: stage
+        description: "{{ doc('stg_opportunities__stage') }}"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["prospecting", "proposal", "negotiation", "closed_won", "closed_lost"]
+      - name: is_closed
+        description: "{{ doc('stg_opportunities__is_closed') }}"
+      - name: is_won
+        description: "{{ doc('stg_opportunities__is_won') }}"
+      - name: amount_dkk
+        description: "{{ doc('stg_opportunities__amount_dkk') }}"
+      - name: sales_owner
+        description: "{{ doc('stg_opportunities__sales_owner') }}"
+      - name: created_on
+        description: "{{ doc('stg_opportunities__created_on') }}"
+      - name: close_on
+        description: "{{ doc('stg_opportunities__close_on') }}"

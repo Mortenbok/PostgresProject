@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_leads
+    description: >
+      One row per CRM lead, from raw.raw_leads. Free-text fields are cleaned:
+      email and status are trimmed and lower-cased, country_code is trimmed and
+      upper-cased, and lead_source is normalised to snake_case. Leads have no
+      customer id; they are matched to customers on email in int_leads_matched.
+      One person can have several leads.
+    columns:
+      - name: lead_id
+        description: "{{ doc('stg_leads__lead_id') }}"
+        data_tests: [unique, not_null]
+      - name: first_name
+        description: "{{ doc('stg_leads__first_name') }}"
+      - name: last_name
+        description: "{{ doc('stg_leads__last_name') }}"
+      - name: full_name
+        description: "{{ doc('stg_leads__full_name') }}"
+      - name: email
+        description: "{{ doc('stg_leads__email') }}"
+        data_tests: [not_null]
+      - name: country_code
+        description: "{{ doc('stg_leads__country_code') }}"
+      - name: lead_source
+        description: "{{ doc('stg_leads__lead_source') }}"
+      - name: status
+        description: "{{ doc('stg_leads__status') }}"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["new", "working", "qualified", "disqualified", "converted"]
+      - name: created_on
+        description: "{{ doc('stg_leads__created_on') }}"
+      - name: converted_on
+        description: "{{ doc('stg_leads__converted_on') }}"

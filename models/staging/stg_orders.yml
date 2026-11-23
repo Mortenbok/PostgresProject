@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: >
+      One row per webshop order (order header), from raw.raw_orders. Holds no
+      amounts; those come from stg_order_items. Status is lower-cased.
+    columns:
+      - name: order_id
+        description: "{{ doc('stg_orders__order_id') }}"
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: "{{ doc('stg_orders__customer_id') }}"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: ordered_on
+        description: "{{ doc('stg_orders__ordered_on') }}"
+      - name: status
+        description: "{{ doc('stg_orders__status') }}"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["completed", "shipped", "cancelled", "returned"]

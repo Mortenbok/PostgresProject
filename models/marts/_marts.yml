@@ -1,64 +1,150 @@
 version: 2
 
+# Columns passed through from staging take their description from the doc
+# blocks in models/staging/_staging_docs.md, so they stay in sync.
+
 models:
   - name: fct_order_lines
     description: One row per order item, enriched with order attributes.
     columns:
       - name: order_item_id
+        description: "{{ doc('stg_order_items__order_item_id') }}"
         data_tests: [unique, not_null]
+      - name: order_id
+        description: "{{ doc('stg_order_items__order_id') }}"
+      - name: customer_id
+        description: "{{ doc('stg_orders__customer_id') }}"
+      - name: product_id
+        description: "{{ doc('stg_order_items__product_id') }}"
+      - name: ordered_on
+        description: "{{ doc('stg_orders__ordered_on') }}"
+      - name: status
+        description: "{{ doc('stg_orders__status') }}"
+      - name: quantity
+        description: "{{ doc('stg_order_items__quantity') }}"
+      - name: unit_price_dkk
+        description: "{{ doc('stg_order_items__unit_price_dkk') }}"
       - name: is_revenue
         description: True when the order status is in var('revenue_statuses').
+
   - name: fct_orders
     description: One row per order. Amounts include all lines regardless of status.
     columns:
       - name: order_id
+        description: "{{ doc('stg_orders__order_id') }}"
         data_tests: [unique, not_null]
+      - name: customer_id
+        description: "{{ doc('stg_orders__customer_id') }}"
+      - name: ordered_on
+        description: "{{ doc('stg_orders__ordered_on') }}"
+      - name: status
+        description: "{{ doc('stg_orders__status') }}"
+
   - name: dim_customers
     description: >
       One row per customer with order history, lifetime revenue and CRM
       attribution (primary lead, acquisition source, won opportunities).
     columns:
       - name: customer_id
+        description: "{{ doc('stg_customers__customer_id') }}"
         data_tests: [unique, not_null]
+      - name: full_name
+        description: "{{ doc('stg_customers__full_name') }}"
+      - name: email
+        description: "{{ doc('stg_customers__email') }}"
+      - name: country_code
+        description: "{{ doc('stg_customers__country_code') }}"
+      - name: signed_up_on
+        description: "{{ doc('stg_customers__signed_up_on') }}"
       - name: acquisition_source
         description: Lead source of the customer's first lead, or 'direct' if none.
         data_tests: [not_null]
       - name: lead_id
+        description: The customer's primary (earliest) lead. Null if the customer did not come in via a lead.
         data_tests:
           - unique
           - relationships:
               arguments:
                 to: ref('dim_leads')
                 field: lead_id
+
   - name: dim_products
     columns:
       - name: product_id
+        description: "{{ doc('stg_products__product_id') }}"
         data_tests: [unique, not_null]
+      - name: product_name
+        description: "{{ doc('stg_products__product_name') }}"
+      - name: category
+        description: "{{ doc('stg_products__category') }}"
+      - name: list_price_dkk
+        description: "{{ doc('stg_products__list_price_dkk') }}"
+
   - name: dim_leads
     description: One row per lead, stitched to its customer (by email) and opportunities.
     columns:
       - name: lead_id
+        description: "{{ doc('stg_leads__lead_id') }}"
         data_tests: [unique, not_null]
+      - name: full_name
+        description: "{{ doc('stg_leads__full_name') }}"
+      - name: email
+        description: "{{ doc('stg_leads__email') }}"
+      - name: country_code
+        description: "{{ doc('stg_leads__country_code') }}"
+      - name: lead_source
+        description: "{{ doc('stg_leads__lead_source') }}"
+      - name: status
+        description: "{{ doc('stg_leads__status') }}"
+      - name: created_on
+        description: "{{ doc('stg_leads__created_on') }}"
+      - name: converted_on
+        description: "{{ doc('stg_leads__converted_on') }}"
       - name: customer_id
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_customers')
                 field: customer_id
+
   - name: fct_opportunities
     description: One row per opportunity, with the lead's source and the matched customer.
     columns:
       - name: opportunity_id
+        description: "{{ doc('stg_opportunities__opportunity_id') }}"
         data_tests: [unique, not_null]
       - name: lead_id
+        description: "{{ doc('stg_opportunities__lead_id') }}"
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_leads')
                 field: lead_id
+      - name: lead_source
+        description: "{{ doc('stg_leads__lead_source') }}"
+      - name: opportunity_name
+        description: "{{ doc('stg_opportunities__opportunity_name') }}"
+      - name: sales_owner
+        description: "{{ doc('stg_opportunities__sales_owner') }}"
+      - name: stage
+        description: "{{ doc('stg_opportunities__stage') }}"
+      - name: is_closed
+        description: "{{ doc('stg_opportunities__is_closed') }}"
+      - name: is_won
+        description: "{{ doc('stg_opportunities__is_won') }}"
+      - name: amount_dkk
+        description: "{{ doc('stg_opportunities__amount_dkk') }}"
+      - name: created_on
+        description: "{{ doc('stg_opportunities__created_on') }}"
+      - name: close_on
+        description: "{{ doc('stg_opportunities__close_on') }}"
+
   - name: rpt_funnel_by_source
     description: Lead-to-revenue funnel per lead source and lead month (people, not lead records).
+    columns:
+      - name: lead_source
+        description: "{{ doc('stg_leads__lead_source') }}"
     data_tests:
       - unique_combination:
           arguments:

@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_order_items
+    description: >
+      One row per order line, from raw.raw_order_items. Links an order to a
+      product with the quantity and the unit price actually charged.
+    columns:
+      - name: order_item_id
+        description: "{{ doc('stg_order_items__order_item_id') }}"
+        data_tests: [unique, not_null]
+      - name: order_id
+        description: "{{ doc('stg_order_items__order_id') }}"
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: product_id
+        description: "{{ doc('stg_order_items__product_id') }}"
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: quantity
+        description: "{{ doc('stg_order_items__quantity') }}"
+      - name: unit_price_dkk
+        description: "{{ doc('stg_order_items__unit_price_dkk') }}"

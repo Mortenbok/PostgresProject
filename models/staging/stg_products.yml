@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_products
+    description: >
+      One row per product in the catalogue, from raw.raw_products, with the
+      current list price.
+    columns:
+      - name: product_id
+        description: "{{ doc('stg_products__product_id') }}"
+        data_tests: [unique, not_null]
+      - name: product_name
+        description: "{{ doc('stg_products__product_name') }}"
+      - name: category
+        description: "{{ doc('stg_products__category') }}"
+      - name: list_price_dkk
+        description: "{{ doc('stg_products__list_price_dkk') }}"

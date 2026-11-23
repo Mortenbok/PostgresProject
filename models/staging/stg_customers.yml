@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: >
+      One row per webshop customer, from raw.raw_customers. Columns are renamed,
+      a full_name is built, email is lower-cased and country_code is upper-cased.
+      There is no CRM id on a customer; int_leads_matched links customers to
+      leads by email.
+    columns:
+      - name: customer_id
+        description: "{{ doc('stg_customers__customer_id') }}"
+        data_tests: [unique, not_null]
+      - name: first_name
+        description: "{{ doc('stg_customers__first_name') }}"
+      - name: last_name
+        description: "{{ doc('stg_customers__last_name') }}"
+      - name: full_name
+        description: "{{ doc('stg_customers__full_name') }}"
+      - name: email
+        description: "{{ doc('stg_customers__email') }}"
+      - name: country_code
+        description: "{{ doc('stg_customers__country_code') }}"
+      - name: signed_up_on
+        description: "{{ doc('stg_customers__signed_up_on') }}"

@@ -4,8 +4,29 @@ models:
   - name: int_leads_matched
     description: Leads with the customer they belong to (matched on email) and a primary-lead flag.
     columns:
+      # inherited from stg_leads
       - name: lead_id
+        description: "{{ doc('stg_leads__lead_id') }}"
         data_tests: [unique, not_null]
+      - name: first_name
+        description: "{{ doc('stg_leads__first_name') }}"
+      - name: last_name
+        description: "{{ doc('stg_leads__last_name') }}"
+      - name: full_name
+        description: "{{ doc('stg_leads__full_name') }}"
+      - name: email
+        description: "{{ doc('stg_leads__email') }}"
+      - name: country_code
+        description: "{{ doc('stg_leads__country_code') }}"
+      - name: lead_source
+        description: "{{ doc('stg_leads__lead_source') }}"
+      - name: status
+        description: "{{ doc('stg_leads__status') }}"
+      - name: created_on
+        description: "{{ doc('stg_leads__created_on') }}"
+      - name: converted_on
+        description: "{{ doc('stg_leads__converted_on') }}"
+      # added here
       - name: customer_id
         description: Null when the lead never became a customer.
         data_tests:
