@@ -63,6 +63,38 @@ so libpq reads `%APPDATA%\postgresql\pgpass.conf`. Set `DBT_PASSWORD` to overrid
 .\.venv\Scripts\dbt.exe build --target test  # test
 ```
 
+## CI/CD (GitHub Actions, self-hosted runner)
+
+`.github/workflows/dbt.yml` runs on a self-hosted Windows runner on the PC that
+hosts Postgres (label `postgres-local`), because GitHub's hosted runners can't
+reach `localhost`.
+
+| Git branch    | dbt target | Database      |
+|---------------|------------|---------------|
+| `development` | `dev`      | `development` |
+| `test`        | `test`     | `test`        |
+| `production`  | `prod`     | `production`  |
+
+- Push to one of these branches -> `dbt build --target <target>`.
+- Pull request into one of them -> `dbt compile` only (nothing is changed).
+- Pull requests from forks never run on the runner. Keep the repo private:
+  a self-hosted runner on a public repo can be abused via fork PRs.
+- Run results (`run_results.json`, `manifest.json`, `dbt.log`) are uploaded as
+  an artifact on every run.
+
+Promotion flow: merge `development` -> `test` -> `production` via pull requests.
+
+Runner setup (once): get a token from *Settings > Actions > Runners > New
+self-hosted runner*, then
+
+```powershell
+powershell -ExecutionPolicy Bypass -File setup\register_runner.ps1 -Token <token>
+```
+
+This installs the runner in `%USERPROFILE%\actions-runner` and starts it as
+your user at logon (scheduled task), so dbt can read your `pgpass.conf`. The
+runner only works while you're logged in.
+
 ## Shared raw data
 
 There is one real copy of the raw data: `development.raw`. In `test` and

@@ -1,0 +1,84 @@
+name: dbt
+
+# Branch -> dbt target -> database
+#   development -> dev  -> development
+#   test        -> test -> test
+#   production  -> prod -> production
+#
+# push / manual run : dbt build against the branch's target
+# pull request      : dbt compile against the base branch's target (no changes)
+
+on:
+  push:
+    branches: [development, test, production]
+  pull_request:
+    branches: [development, test, production]
+  workflow_dispatch:
+
+# One run per environment at a time; queued runs wait instead of cancelling.
+concurrency:
+  group: dbt-${{ github.base_ref || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dbt:
+    # Never run code from forks on the self-hosted runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, windows, postgres-local]
+    timeout-minutes: 30
+    env:
+      BRANCH: ${{ github.base_ref || github.ref_name }}
+      DBT_PROFILES_DIR: ${{ github.workspace }}
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick dbt target
+        run: |
+          $map = @{ development = 'dev'; test = 'test'; production = 'prod' }
+          if (-not $map.ContainsKey($env:BRANCH)) { throw "No dbt target for branch '$env:BRANCH'" }
+          $target = $map[$env:BRANCH]
+          [IO.File]::AppendAllText($env:GITHUB_ENV, "DBT_TARGET=$target`n")
+          "Branch '$env:BRANCH' -> dbt target '$target'"
+
+      - name: Install dbt
+        run: |
+          # Find uv even if the runner started before it was put on PATH.
+          $uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
+          if (-not $uv) {
+            $uv = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages", "$env:USERPROFILE\.local\bin" `
+                    -Recurse -Filter uv.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $uv) { throw 'uv not found on the runner machine (winget install astral-sh.uv)' }
+          & $uv venv .venv --python 3.12
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & $uv pip install --python .venv -r requirements.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: dbt debug
+        run: .\.venv\Scripts\dbt.exe debug --target $env:DBT_TARGET
+
+      - name: dbt build
+        if: github.event_name != 'pull_request'
+        run: .\.venv\Scripts\dbt.exe build --target $env:DBT_TARGET
+
+      - name: dbt compile (pull request check)
+        if: github.event_name == 'pull_request'
+        run: .\.venv\Scripts\dbt.exe compile --target $env:DBT_TARGET
+
+      - name: Upload dbt results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-${{ env.BRANCH }}-${{ github.run_id }}
+          path: |
+            target/run_results.json
+            target/manifest.json
+            logs/dbt.log
+          if-no-files-found: ignore
+          retention-days: 14
